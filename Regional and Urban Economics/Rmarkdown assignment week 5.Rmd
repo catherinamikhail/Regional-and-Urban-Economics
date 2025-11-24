@@ -1,0 +1,124 @@
+---
+title: "Assignment Week 5 Regional and Urban Economics"
+subtitle: Catherina Mikhail, 2847118; Sinem Göral, 2817932; Ela Köycü, 2846357.Tutorial group 4
+output: word_document
+date: "2025-11-24"
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+install.packages("tidyverse")
+install.packages("stargazer")
+install.packages("sjPlot")
+library(stargazer)
+library(tidyverse)
+library(sjPlot) 
+data <- read_csv(file = "monocentric_2016.csv")
+
+```
+
+1 The assignment 
+
+1.1 Introduction and hypotheses 
+
+The municipality of Utrecht is one of the most densely populated areas in the Netherlands and serves as a key economic and administrative center. Its central location, transport connections, and mix of urban and suburban neighborhoods make it an ideal case to study how land prices vary with distance from the municipal CBD.
+
+The aim is to compare land prices in the municipality of Utrecht with the national pattern to understand whether the municipality follows general trends or displays local deviations due to urban density, historical structures, or amenities.
+
+The basic regression equation that shows the relationship between the land prices and the distance to the Central Business District is given by: linear case  => P_i = beta_0 + beta_1 * DistanceCBD_i + epsilon_i and log-linear case => Ln(P_i) = beta_0 + beta_1 * DistanceCBD_i + epsilon_i if land prices are skewed. 
+
+P_i = The price of the land per m^2 for location i 
+beta_0 = estimated land price at the CBD
+beta_1 = slope of the linear regression model, so it is the expected change in price per km away from the CBD
+DistanceCBD_i = distance from a particular location in km to the CBD
+
+Our hypotheses based on the theory is that the relationship between land prices and the distance to the Central Business District is negative. So, the further away from the CBD, the lower the land prices => H0: beta_1 = 0, H1: beta_1 < 0. This is because land is more valuable closer to the CBD due to agglomeration effects (increasing returns to scale) and particular amenities, making people willing to pay more to locate closer to the CBD.
+
+Our other hypothesis particular for the municipality of Utrecht is that the slope may be steeper than the national average because Utrecht municipality is compact, with high-density neighborhoods around the CBD => H0: beta_1 of Utrecht  = beta_1 of The Netherlands, H1: beta_1 of Utrecht > beta_1 of The Netherlands.
+
+Because we think that land prices are skewed, we will use a log-linear regression model. This means that if we interpret the outcome of the model, the answer will be in percentages.
+
+
+1.2 Data and descriptives
+
+1.2.1 Determination of land prices 
+
+The land-rent data come from a hedonic-pricing approach. Rather than simply observing land sales, they estimate the implicit land value by exploiting variation in lot sizes across many housing transactions. Because lot sizes differ significantly (smaller in densely built-up urban areas and larger in more peripheral regions),their regression allows them to identify how much of the housing price is attributable to the land itself.
+
+Finally, they adjust for temporal price differences using time dummies in the regression, so all land rents are expressed in real terms. By mapping these derived land rents and comparing them with variables such as distance to city centers and population density, the method produces a detailed spatial surface of land rents—making it possible to analyze how land values decline (or vary) across urban areas like in our case for the municipality of Utrecht.
+
+1.2.2 Descriptives 
+
+Create a table and discuss the descriptive statistics
+of the variables you want to use in the regression analysis.
+```{r}
+# Making a subset of the data of the municipality of Utrecht
+df_utrecht = data %>%
+  filter(grepl("Utrecht", munname))
+df_utrecht_clean <- na.omit(df_utrecht[, c("lnpricem2", "distcbd", "hhsize", "popdens", "shforeign", "shlandres", "shyoungp", "shelderly", "RSdistcbd")])
+
+
+# Creating a table with the descriptive statistics of the municipality of Utrecht
+library(dplyr)
+library(knitr)
+
+# Calculate descriptive statistics of the municipality of Utrecht
+stats <- df_utrecht_clean %>%
+  select(lnpricem2, distcbd, hhsize, popdens, shforeign, shlandres, shyoungp, shelderly, RSdistcbd)%>%
+  summarise(across(everything(), list(
+    Mean = ~mean(.x, na.rm = TRUE),
+    SD = ~sd(.x, na.rm = TRUE),
+    Min = ~min(.x, na.rm = TRUE),
+    Max = ~max(.x, na.rm = TRUE),
+    N = ~sum(!is.na(.x))
+  )) %>%
+  pivot_longer(everything(), names_to = c("Variable", ".value"), names_sep = "_"))
+
+# Format the table of teh descriptive statistics of the municipality of Utrecht
+kable(stats, format = "markdown", caption = "Descriptive Statistics for Utrecht", digits = 2)
+
+# Now I will do the same for The Netherlands
+
+# Calculate descriptive statistics for national level
+national_stats <- data %>%
+  select(lnpricem2, distcbd, hhsize, popdens, shforeign, shlandres, shyoungp, shelderly, RSdistcbd) %>%
+  summarise(across(everything(), list(
+    Mean = ~mean(.x, na.rm = TRUE),
+    SD = ~sd(.x, na.rm = TRUE),
+    Min = ~min(.x, na.rm = TRUE),
+    Max = ~max(.x, na.rm = TRUE),
+    N = ~sum(!is.na(.x))
+  )) %>%
+  pivot_longer(everything(), names_to = c("Variable", ".value"), names_sep = "_"))
+
+# Format the table for the national level
+kable(national_stats, format = "markdown", caption = "Descriptive Statistics for The Netherlands", digits = 2)
+         
+```
+
+
+1.2.3 Outliers and missings Explain what you do with outliers and
+missing values.
+
+1.3 Model and results
+
+1.3.1 Estimation Estimate the model and interpret the results.
+
+1.3.2 Amenities Land values can be higher because of urban amenities and
+therefore the basic regression might suffer from omitted variable bias.
+Explain which control variables you want to include to control for this.
+HINT: for which urban amenities would population density serve as a good
+proxy?
+
+1.3.3 Present your results Make a table with the regression outcomes of
+your basic and extended regression equation. Interpret the estimated
+coefficients, test your hypothesis and describe the differences between
+the regression. Export the table using the stargazer package. See as
+well the Stargazer documentation. An example is given in the R-script.
+
+1.4 Conclusions Describe the conclusions for your municipality and
+discuss possible problems related to the OLS assumptions. Give
+suggestions for solutions to solve these problems in future research.
