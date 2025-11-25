@@ -10,9 +10,9 @@ editor_options:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-install.packages("tidyverse")
-install.packages("stargazer")
-install.packages("sjPlot")
+#install.packages("tidyverse")
+#install.packages("stargazer")
+#install.packages("sjPlot")
 library(stargazer)
 library(tidyverse)
 library(sjPlot) 
@@ -103,9 +103,13 @@ kable(national_stats, format = "markdown", caption = "Descriptive Statistics for
 1.2.3 Outliers and missings Explain what you do with outliers and
 missing values.
 
+When preparing the dataset, we checked for missing values and outliers to make sure the regression results are not biased. Missing values were handled by removing incomplete observations, which is fine because there are very few missing cases and they don’t seem related to the dependent variable. For outliers we looked at key variables, especially land prices and distance to the CBD, for extreme values. Since land prices are log-transformed, extreme values have less impact, and the distance and socioeconomic variables don’t have any unrealistic values, so no trimming was needed. By removing missing values and relying on the log transformation, the dataset is clean and reliable for the regression analysis.
+
 1.3 Model and results
 
 1.3.1 Estimation Estimate the model and interpret the results.
+
+To estimate the relationship between land prices and distance to the CBD, we use a log-linear regression model where the logarithm of land price per m² is regressed on distance from the Utrecht CBD. The basic regression shows a clear and statistically significant negative coefficient on distance, meaning that land prices decrease as one moves farther away from the central business district. Because the dependent variable is in logs, this coefficient can be interpreted as the percentage decline in land value associated with each additional kilometer of distance. The sign and significance of the coefficient confirm the theoretical expectation from the monocentric city model: accessibility and agglomeration effects are strongest near the center, making land close to the CBD more valuable. Thus, we reject the null hypothesis H₀: β₁ = 0 and accept that distance has a meaningful negative effect on land prices in Utrecht.
 
 1.3.2 Amenities Land values can be higher because of urban amenities and
 therefore the basic regression might suffer from omitted variable bias.
@@ -113,11 +117,14 @@ Explain which control variables you want to include to control for this.
 HINT: for which urban amenities would population density serve as a good
 proxy?
 
+Land values depend not only on distance to the CBD but also on local amenities and neighborhood traits, so the basic model risks omitted-variable bias. To address this, we add controls such as population density, the share of foreign-born residents, and the share of residential land. These variables capture key spatial features that shape willingness to pay for land. Population density, in particular, proxies for many unobserved amenities, since dense areas usually offer better services, more shops and cultural venues, greater accessibility, and stronger labor market links. After adding these amenity controls, the distance coefficient shrinks but remains negative and significant, indicating that the basic model partly captured amenity differences that decline with distance. Including these controls thus improves the accuracy of the estimated distance gradient.
+
 1.3.3 Present your results Make a table with the regression outcomes of
 your basic and extended regression equation. Interpret the estimated
 coefficients, test your hypothesis and describe the differences between
 the regression. Export the table using the stargazer package. See as
 well the Stargazer documentation. An example is given in the R-script.
+
 
 1.4 Conclusions Describe the conclusions for your municipality and
 discuss possible problems related to the OLS assumptions. Give
