@@ -52,13 +52,59 @@ Finally, they adjust for temporal price differences using time dummies in the re
 
 1.2.2 Descriptives 
 
-Create a table and discuss the descriptive statistics
-of the variables you want to use in the regression analysis.
+We can see here that the descriptive statistics reveal notable differences between Utrecht and the Netherlands. Utrecht has a higher average land price (lnpricem2) of 5.87, with a standard deviation of 0.77, which indicates Utrecht has that relatively high land prices with moderate variation. In contrast, the Netherlands has an average land price of 4.47, with a standard deviation of 1.15, indicating lower land prices with more variation.
+
+The average distance to CBD (distcbd) in Utrecht is 3.11 km, with a standard deviation of 1.94, suggesting a compact urban area. Which is also known in the Netherlands, that Utrecht is one of the relatively smaller cities in de Randstad. In the Netherlands, the average distance to CBD is 10.30 km, with a standard deviation of 7.79, indicating a more spread-out urban landscape.
+
+Population density (popdens) in Utrecht averages 57.01 people per km², with a standard deviation of 40.11, indicating a moderately dense area with significant variation. In the Netherlands, population density averages 16.62 people per km², with a standard deviation of 28.26, indicating much lower density with significant variation.
+
+The share of foreign-born residents (shforeign) in Utrecht is 0.27, with a standard deviation of 0.13, suggesting a more diverse population. In the Netherlands, the share of foreign-born residents is 0.13, with a standard deviation of 0.12, indicating less overall diversity.
+
+The variables used in the regression analysis include the natural logarithm of land prices per square meter, distance to the CBD, population density, share of foreign-born residents, share of residential land, age structure variables, share of land infrastructure, and share of open space. These variables capture the relationship between land prices and distance to the CBD, while controlling for urban amenities, neighborhood characteristics, and demographic factors.
+
+By including these variables, we want to estimate with the the regression analysis the distance gradient, see what the effects are of urban amenities and neighborhood characteristics on land prices, and reduce omitted variable bias, ultimately providing insights into the determinants of land prices in Utrecht and the Netherlands.
+
+```{r}
+library(stargazer)
+library(dplyr)
+
+# Calculate descriptive statistics for Utrecht
+utrecht_stats <- df_utrecht_clean %>% 
+  summarise(across(everything(), list(
+    Mean = ~mean(.x, na.rm = TRUE),
+    SD = ~sd(.x, na.rm = TRUE),
+    Min = ~min(.x, na.rm = TRUE),
+    Max = ~max(.x, na.rm = TRUE),
+    N = ~sum(!is.na(.x))
+  )))
+
+# Calculate descriptive statistics for the Netherlands
+nl_stats <- data %>%
+  summarise(across(everything(), list(
+    Mean = ~mean(.x, na.rm = TRUE),
+    SD = ~sd(.x, na.rm = TRUE),
+    Min = ~min(.x, na.rm = TRUE),
+    Max = ~max(.x, na.rm = TRUE),
+    N = ~sum(!is.na(.x))
+  )))
+
+library(stargazer)
+
+library(stargazer)
+
+stargazer(df_utrecht_clean, data, 
+          type = "text",
+          title = "Descriptive Statistics for Utrecht and the Netherlands",
+          digits = 2,
+          summary.stat = c("mean", "sd", "min", "max", "N"),
+          column.labels = c("Utrecht", "The Netherlands"))
+```
+
 ```{r}
 # Making a subset of the data of the municipality of Utrecht
 df_utrecht = data %>%
   filter(grepl("Utrecht", munname))
-df_utrecht_clean <- na.omit(df_utrecht[, c("lnpricem2", "distcbd", "hhsize", "popdens", "shforeign", "shlandres", "shyoungp", "shelderly", "RSdistcbd")])
+df_utrecht_clean <- na.omit(df_utrecht[, c("lnpricem2", "distcbd", "shlandinfr","shopenspace", "popdens", "shforeign", "shlandres", "shyoungp", "shelderly")])
 
 
 # Creating a table with the descriptive statistics of the municipality of Utrecht
@@ -67,7 +113,7 @@ library(knitr)
 
 # Calculate descriptive statistics of the municipality of Utrecht
 stats <- df_utrecht_clean %>%
-  select(lnpricem2, distcbd, hhsize, popdens, shforeign, shlandres, shyoungp, shelderly, RSdistcbd)%>%
+  select(lnpricem2, distcbd, shlandinfr,shopenspace, popdens, shforeign, shlandres, shyoungp, shelderly)%>%
   summarise(across(everything(), list(
     Mean = ~mean(.x, na.rm = TRUE),
     SD = ~sd(.x, na.rm = TRUE),
@@ -84,7 +130,7 @@ kable(stats, format = "markdown", caption = "Descriptive Statistics for Utrecht"
 
 # Calculate descriptive statistics for national level
 national_stats <- data %>%
-  select(lnpricem2, distcbd, hhsize, popdens, shforeign, shlandres, shyoungp, shelderly, RSdistcbd) %>%
+  select(lnpricem2, distcbd, shlandinfr,shopenspace, popdens, shforeign, shlandres, shyoungp, shelderly) %>%
   summarise(across(everything(), list(
     Mean = ~mean(.x, na.rm = TRUE),
     SD = ~sd(.x, na.rm = TRUE),
@@ -121,31 +167,70 @@ summary(model_basic_utrecht)
 
 model_basic_national = lm(lnpricem2 ~ distcbd, data=data)
 summary(model_basic_national)
+
+
 ```
 
 
 1.3.2 Amenities 
 
-Land values depend not only on distance to the CBD but also on local amenities and neighborhood traits, so the basic model risks omitted-variable bias. To address this, we add controls such as population density, the share of foreign-born residents, and the share of residential land. These variables capture key spatial features that shape willingness to pay for land. Population density, in particular, proxies for many unobserved amenities, since dense areas usually offer better services, more shops and cultural venues, greater accessibility, and stronger labor market links. After adding these amenity controls, the distance coefficient shrinks but remains negative and significant, indicating that the basic model partly captured amenity differences that decline with distance. Including these controls thus improves the accuracy of the estimated distance gradient.
+Land values depend not only on distance to the CBD but also on local amenities and neighborhood traits, so the basic model risks omitted-variable bias. To address this, we add controls such as population density, the share of foreign-born residents, the share of residential land, the share of open space, and the share of land infrastructure. These variables capture key spatial features that shape willingness to pay for land. Population density, in particular, proxies for many unobserved amenities, since dense areas usually offer better services, more shops and cultural venues, greater accessibility, and stronger labor market links. The share of open space captures access to green spaces and recreational areas, while the share of land infrastructure reflects infrastructure development and accessibility. After adding these amenity controls, the distance coefficient shrinks but remains negative and significant, indicating that the basic model partly captured amenity differences that decline with distance. Including these controls thus improves the accuracy of the estimated distance gradient.
 
 1.3.3 Present your results 
 
-Make a table with the regression outcomes of
-your basic and extended regression equation. Interpret the estimated
-coefficients, test your hypothesis and describe the differences between
-the regression. Export the table using the stargazer package. See as
-well the Stargazer documentation. An example is given in the R-script.
+In the tables under, you will find the regression outcomes of the basic and extended regression models. Here, we examined the relationship between land prices (lnpricem2) and distance to the city center (distcbd) for Utrecht and national levels, with and without controls.
+
+Interpretation of the coefficients and hypothesis testing in the regression models:
+Basic Models
+- Utrecht Basic Model
+    - Intercept: 6.672***, this is the expected land price at the CBD in log euros/m²
+    - distcbd: -0.258***, this means that a 1 km increase in distance is associated with a 25.8% decrease in land price and that it is  statistically significant at 1% level, given by the three stars.
+    - R²: 0.422, this means that 42.2% of variation in the model is explained.
+    - Hypothesis test: H0: β1 = 0 rejected, because the p-value is 5.69e-06 and is therefore much smaller than a significance level of 1%. This implies that distance to CBD has a significant negative effect on land prices.
+    
+- National Basic Model
+    - Intercept: 5.213***, this is the expected land price at CBD in log euros/m²
+    - distcbd: -0.072***, this implies that a 1 km increase in distance is associated with a 7.2% decrease in land price and that it is statistically significant at 1% level, given by the three stars.
+    - R²: 0.238, this means that 23.8% of variation explained in the model.
+    - Hypothesis test: H0: β1 = 0 rejected because the p-value is smaller than 2e-16, so it is smaller than the 1% significance level. Therefore, distance to CBD has a significant negative effect on land prices.
+
+Extended Models
+- Utrecht Extended Model
+    - Intercept: 6.681***, this is the expected land price at CBD in log euros/m²
+    - distcbd: -0.178**, this implies that 1 km increase in distance is associated with a 17.8% decrease in land price, holding all other variables constant and that it is  statistically significant at 5% level, given the two stars.
+    - popdens: 0.001, holding all other variables constant, a insignificant effect of population density on land prices)
+    - shforeign: -0.082 (insignificant effect of foreign-born share on land prices)
+    - shlandres: 0.873 (insignificant effect of residential land share on land prices)
+    - shyoungp: -0.280 (insignificant effect of young population share on land prices)
+    - shelderly: -5.846** (1% increase in elderly share → 5.846% decrease in land price, statistically significant at 5% level)
+    - R²: 0.657 (65.7% of variation explained)
+- National Extended Model
+    - Intercept: 4.329*** (expected land price at CBD, in log euros/m²)
+    - distcbd: -0.030*** (1 km increase in distance → 3.0% decrease in land price, controlling for other factors, statistically significant at 1% level)
+    - popdens: -0.0004 (insignificant effect of population density on land prices)
+    - shforeign: 1.584*** (1% increase in foreign-born share → 1.584% increase in land price, statistically significant at 1% level)
+    - shlandres: 2.235*** (1% increase in residential land share → 2.235% increase in land price, statistically significant at 1% level)
+    - shyoungp: -0.724* (1% increase in young population share → 0.724% decrease in land price, statistically significant at 10% level)
+    - shelderly: 0.020 (insignificant effect of elderly share on land prices)
+    - R²: 0.503 (50.3% of variation explained)
+
+Model Comparison
+- Distance to CBD has a stronger negative effect in Utrecht vs. national level in both basic and extended models.
+- Controls improve model fit more for Utrecht (R²: 0.422 → 0.657) than national level (R²: 0.238 → 0.503).
+- Utrecht models explain more variation in land prices, suggesting local factors play a bigger role.
+
+The analysis suggests that distance to CBD is a key factor in land prices, especially in Utrecht, with demographic and land use factors also contributing.
 ```{r, results = "asis"}
 # Load the stargazer package
 library(stargazer)
 
 # Estimate the basic and extended models for Utrecht
 model_basic_utrecht <- lm(lnpricem2 ~ distcbd, data = df_utrecht_clean)
-model_extended_utrecht <- lm(lnpricem2 ~ distcbd + popdens + shforeign + shlandres + shyoungp + shelderly, data = df_utrecht_clean)
+model_extended_utrecht <- lm(lnpricem2 ~ distcbd + popdens + shforeign + shlandinfr + shopenspace + shlandres + shyoungp + shelderly, data = df_utrecht_clean)
 
 # Estimate the basic and extended models for national
 model_basic_national <- lm(lnpricem2 ~ distcbd, data = data)
-model_extended_national <- lm(lnpricem2 ~ distcbd + popdens + shforeign + shlandres + shyoungp + shelderly, data = data)
+model_extended_national <- lm(lnpricem2 ~ distcbd + popdens + shforeign+shlandinfr + shopenspace + shlandres + shyoungp + shelderly, data = data)
 
 # Create a table with the regression outcomes
 library(stargazer)
